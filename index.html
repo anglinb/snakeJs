@@ -1,0 +1,194 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <style>
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="width: 1200px; margin: 0px auto;"><canvas id="myCanvas" width="495" height="495" style="border: 1px solid black; "></canvas><pre id="showstatus"></pre>
+ 
+    <button onclick="createBlock(); runLoop();">Start</button>
+    <button onclick="clearRunLoop();">Stop</button>
+    <button onclick="step();">Step</button>
+    Direction: <span id="direction"></span>
+    </div>
+    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script>
+      var position  = [];
+      var lastHead = {'x':0,'y':0};
+      var headDirection = 'r';
+      var runLoopTimer;
+      var directionIndicator;
+      var tailLength = 10;
+      var tickDowns = [];
+      Array.prototype.clean = function(deleteValue) {
+        for (var i = 0; i < this.length; i++) {
+          if (this[i] == deleteValue) {         
+            this.splice(i, 1);
+            i--;
+          }
+        }
+        return this;
+      };
+      function drawPoint(x,y, fillStyle){
+        ctx.fillStyle = fillStyle || "#145e0e";
+        ctx.fillRect(x,y,15,15);
+      }
+      function clearPoint(x,y){
+        ctx.clearRect(x,y,15,15);
+      }
+      function drawScreen(){
+        for (var i = position.length - 1; i >= 0; i--) {
+          for (var j = position[i].length - 1; j >= 0; j--) {
+            if( position[i][j] == 1 ||  position[i][j] == 'h'){
+              drawPoint(i*15,j*15);
+            }
+            if( position[i][j] == 'b'){
+              drawPoint(i*15,j*15, '#2561eb');
+            }
+            if( position[i][j] == 'r' || position[i][j] == 0){
+              clearPoint(i*15,j*15);
+              position[i][j] = 0;
+            }
+          };
+        };
+      }
+      function initHead(){
+        position[15][5] = 'h';
+        lastHead = {'x': 15, 'y':5}
+      }
+      function updatePosition(){
+        if( headDirection == 'r' ){
+          nextX = lastHead.x + 1
+          nextY = lastHead.y
+          // position[lastHead.x + 1][lastHead.y] = 
+        }
+        if( headDirection == 'l' ){
+          nextX = lastHead.x - 1
+          nextY = lastHead.y
+          // position[lastHead.x + 1][lastHead.y] = 
+        }
+        if( headDirection == 'u' ){
+          nextX = lastHead.x
+          nextY = lastHead.y - 1
+          // position[lastHead.x + 1][lastHead.y] = 
+        }
+        if( headDirection == 'd' ){
+          nextX = lastHead.x
+          nextY = lastHead.y + 1
+          // position[lastHead.x + 1][lastHead.y] = 
+        }
+        if( nextX > 32){
+          nextX = 0
+        }
+        if( nextX < 0){
+          nextX = 32
+        }
+        if( nextY > 32){
+          nextY = 0
+        }
+        if( nextY < 0){
+          nextY = 32
+        }
+        if ( position[nextX][nextY] == 1){
+          console.log('dksf');
+          clearRunLoop();
+          alert("you died...");
+          clearRunLoop();
+          clearRunLoop();
+        }
+        if ( position[nextX][nextY] == 'b'){
+          tailLength++;
+          createBlock();
+        }
+        position[lastHead.x][lastHead.y] = 1;
+        tickDowns.push({'x':lastHead.x, 'y':lastHead.y, 'tick':tailLength+1});
+        // for (var i = tickDowns.length - 1; i >= 0; i--) {
+          tickDowns.clean(undefined);
+          $.each( tickDowns, function( i, value ){          
+            if( tickDowns[i].tick == 1 ){
+              position[tickDowns[i].x][tickDowns[i].y] = 0;
+              delete tickDowns[i]
+              // tickDowns = tickDowns.splice(i,1);
+            }else{
+              tickDowns[i].tick = tickDowns[i].tick - 1;
+            }
+          });
+
+        position[nextX][nextY] = 'h';
+        lastHead.x = nextX;
+        lastHead.y = nextY;
+        directionIndicator.innerHTML = headDirection;
+      }
+      function init(){
+        for (var i = 0; i < 33; i++) {
+          position.push([])
+          for (var j = 0; j < 33; j++) {
+            position[i].push(0);
+          };
+        };
+        directionIndicator = document.getElementById("direction");
+        initHead();
+      }
+      function runLoop(){
+        updatePosition();
+        drawScreen();
+        runLoopTimer = setTimeout(function(){
+          runLoop();
+        }, 100);
+      }
+      function clearRunLoop(){
+        console.log('cleared');
+        clearTimeout(runLoopTimer);
+      }
+      function step(){
+        updatePosition();
+        drawScreen();
+      }
+      function createBlock(){
+        while(true){
+          var randomx = Math.floor(Math.random() * (32 - 0 + 1)) + 0;
+          var randomy = Math.floor(Math.random() * (32 - 0 + 1)) + 0;
+          if( position[randomx][randomy] == 0 ){
+            position[randomx][randomy] = 'b';
+            break;
+          }
+        }
+      }
+      function showGrid(){
+        var all = [];
+        for (var i = 0; i < position.length; i++) {
+          all.push(position[i].join(' '));
+        };
+        $("#showstatus").html(all.join('\n'));
+      }
+      $(document).keydown(function(e) {
+        if( e.which == 38 && headDirection != "d"){ //Up
+          headDirection = "u";
+        }
+        else if( e.which == 40 && headDirection != "u"){//Down
+          headDirection = "d";
+        }
+        else if( e.which == 39 && headDirection != "l"){//Right
+          headDirection = "r";
+        }
+        else if( e.which == 37 && headDirection != "r"){//Left
+          headDirection = "l";
+        }else{
+          return;
+        }
+        e.preventDefault(); // prevent the default action (scroll / move caret)
+      });
+
+      var canvas = document.getElementById('myCanvas');
+      var ctx = canvas.getContext('2d');
+      init();
+
+
+    </script>
+  </body>
+</html>      
